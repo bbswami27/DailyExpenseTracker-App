@@ -1,0 +1,20 @@
+Daily Expense Tracker v1.7.1
+
+New in v1.7.1:
+- App name changed to Daily Expense Tracker.
+- Added selectable multiple currency support.
+- Currency applies to entry forms, dashboards, reports and exports.
+- INR, USD, EUR, GBP, AED, SAR, CAD, AUD, SGD, JPY, CNY and NPR included.
+
+- Bill view export: PDF, Excel-compatible XLS and JPG
+- Reports complete-bill export with every expense item
+- Last six months Items Price Comparison report with average, lowest and highest rate
+- Price Comparison export: PDF, Excel-compatible XLS and JPG
+- Expense editing now includes item name, quantity, unit, rate and calculated amount
+- Back from expense detail/edit returns to Transaction History
+- Back from a shopping list returns to Shopping Lists
+- Added expense items are shown at the top of Add Expense
+- Item cards and item names use distinct theme colors
+- Add New Item buttons use a separate tertiary color
+
+Build note: Open the project in Android Studio, Sync, Clean Project and Rebuild Project.
