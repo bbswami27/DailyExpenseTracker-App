@@ -2,13 +2,14 @@ package com.bharatbhushan.dailyexpensetracker
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -43,33 +44,21 @@ fun BudgetScreen(
         .getActiveCategories()
         .collectAsState(initial = emptyList())
 
-    val categories = activeCategories.map {
-        it.nameHindi
+    val categories = activeCategories.map { it.nameHindi }
+
+    val existingBudgetMap = remember(existingBudgets) {
+        existingBudgets.associateBy { it.category }
     }
 
-    val budgetValues = remember(
-        existingBudgets,
-        categories
-    ) {
+    val budgetValues = remember(existingBudgets, categories) {
         mutableStateMapOf<String, String>().apply {
-
             categories.forEach { category ->
-
-                val savedAmount = existingBudgets
-                    .find {
-                        it.category == category
-                    }
-                    ?.amount
-
-                this[category] =
-                    if (
-                        savedAmount == null ||
-                        savedAmount == 0.0
-                    ) {
-                        ""
-                    } else {
-                        savedAmount.toString()
-                    }
+                val savedAmount = existingBudgetMap[category]?.amount
+                this[category] = if (savedAmount == null || savedAmount == 0.0) {
+                    ""
+                } else {
+                    savedAmount.toString()
+                }
             }
         }
     }
@@ -78,16 +67,13 @@ fun BudgetScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBack
-                    ) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
                 },
-
                 title = {
                     AppText(
                         text = "मासिक बजट",
@@ -97,46 +83,43 @@ fun BudgetScreen(
             )
         }
     ) { padding ->
-
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
-            AppText(
-                text = "Budget Allocation",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            AppText(
-                text = "माह: $monthKey",
-                fontSize = 14.sp
-            )
-
-            if (categories.isEmpty()) {
-
+            item {
                 AppText(
-                    text = "कोई active category उपलब्ध नहीं है।"
+                    text = "Budget Allocation",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            categories.forEach { category ->
+            item {
+                AppText(
+                    text = "माह: $monthKey",
+                    fontSize = 14.sp
+                )
+            }
 
+            if (categories.isEmpty()) {
+                item {
+                    AppText(text = "कोई active category उपलब्ध नहीं है।")
+                }
+            }
+
+            items(
+                items = categories,
+                key = { category -> category }
+            ) { category ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-
-                    Column(
-                        modifier = Modifier.padding(14.dp)
-                    ) {
-
+                    Column(modifier = Modifier.padding(14.dp)) {
                         AppText(
                             text = category,
                             fontWeight = FontWeight.Bold
@@ -144,33 +127,21 @@ fun BudgetScreen(
 
                         OutlinedTextField(
                             value = budgetValues[category] ?: "",
-
                             onValueChange = { value ->
-
-                                if (
-                                    value.isEmpty() ||
-                                    value.toDoubleOrNull() != null
-                                ) {
+                                if (value.isEmpty() || value.toDoubleOrNull() != null) {
                                     budgetValues[category] = value
                                 }
                             },
-
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-
                             label = {
-                                AppText(
-                                    "मासिक बजट / Monthly Budget"
-                                )
+                                AppText("मासिक बजट / Monthly Budget")
                             },
-
                             prefix = {
                                 AppText("${currentCurrencySymbol()} ")
                             },
-
                             singleLine = true,
-
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Decimal
                             )
@@ -179,20 +150,12 @@ fun BudgetScreen(
                 }
             }
 
-            Button(
-                onClick = {
-
-                    val updatedBudgets =
-                        categories.mapNotNull { category ->
-
-                            val amount =
-                                budgetValues[category]
-                                    ?.toDoubleOrNull()
-
-                            if (
-                                amount != null &&
-                                amount >= 0
-                            ) {
+            item {
+                Button(
+                    onClick = {
+                        val updatedBudgets = categories.mapNotNull { category ->
+                            val amount = budgetValues[category]?.toDoubleOrNull()
+                            if (amount != null && amount >= 0) {
                                 Budget(
                                     monthKey = monthKey,
                                     category = category,
@@ -202,21 +165,17 @@ fun BudgetScreen(
                                 null
                             }
                         }
-
-                    onSave(updatedBudgets)
-                },
-
-                enabled = categories.isNotEmpty(),
-
-                modifier = Modifier.fillMaxWidth(),
-
-                shape = RoundedCornerShape(14.dp)
-            ) {
-
-                AppText(
-                    text = "बजट सेव करें",
-                    fontWeight = FontWeight.Bold
-                )
+                        onSave(updatedBudgets)
+                    },
+                    enabled = categories.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    AppText(
+                        text = "बजट सेव करें",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
